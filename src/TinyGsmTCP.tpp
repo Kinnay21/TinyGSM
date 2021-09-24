@@ -107,7 +107,7 @@ class TinyGsmTCP {
     // }
 
     // Writes data out on the client using the modem send functionality
-    size_t write(const uint8_t* buf, size_t size) override {
+    size_t write(const uint8_t* buf, size_t size) override {  // size_t write(const uint8_t* buf, size_t size) override {
       TINY_GSM_YIELD();
       at->maintain();
       return at->modemSend(buf, size, mux);
@@ -141,8 +141,6 @@ class TinyGsmTCP {
       // with the modem to see if anything has arrived without a UURC.
       if (!rx.size()) {
         if (millis() - prev_check > 500) {
-          // setting got_data to true will tell maintain to run
-          // modemGetAvailable(mux)
           got_data   = true;
           prev_check = millis();
         }
@@ -213,8 +211,6 @@ class TinyGsmTCP {
         }
         // Workaround: Some modules "forget" to notify about data arrival
         if (millis() - prev_check > 500) {
-          // setting got_data to true will tell maintain to run
-          // modemGetAvailable()
           got_data   = true;
           prev_check = millis();
         }
@@ -241,9 +237,10 @@ class TinyGsmTCP {
       return -1;
     }
 
-	int peek() override {
-		return (uint8_t)rx.peek();
-	}
+    // TODO(SRGDamia1): Implement peek
+    int peek() override {
+      return -1;
+    }
 
     void flush() override {
       at->stream.flush();
@@ -251,22 +248,7 @@ class TinyGsmTCP {
 
     uint8_t connected() override {
       if (available()) { return true; }
-#if defined TINY_GSM_BUFFER_READ_AND_CHECK_SIZE
-      // If the modem is one where we can read and check the size of the buffer,
-      // then the 'available()' function will call a check of the current size
-      // of the buffer and state of the connection. [available calls maintain,
-      // maintain calls modemGetAvailable, modemGetAvailable calls
-      // modemGetConnected]  This cascade means that the sock_connected value
-      // should be correct and all we need
       return sock_connected;
-#elif defined TINY_GSM_NO_MODEM_BUFFER || defined TINY_GSM_BUFFER_READ_NO_CHECK
-      // If the modem doesn't have an internal buffer, or if we can't check how
-      // many characters are in the buffer then the cascade won't happen.
-      // We need to call modemGetConnected to check the sock state.
-      return at->modemGetConnected(mux);
-#else
-#error Modem client has been incorrectly created
-#endif
     }
     operator bool() override {
       return connected();

@@ -34,8 +34,6 @@
 // #define TINY_GSM_MODEM_SIM868
 // #define TINY_GSM_MODEM_SIM900
 // #define TINY_GSM_MODEM_SIM7000
-// #define TINY_GSM_MODEM_SIM7000SSL
-// #define TINY_GSM_MODEM_SIM7080
 // #define TINY_GSM_MODEM_SIM5360
 // #define TINY_GSM_MODEM_SIM7600
 // #define TINY_GSM_MODEM_UBLOX
@@ -50,6 +48,7 @@
 // #define TINY_GSM_MODEM_ESP8266
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
+// #define TINY_GSM_MODEM_SEQUANS_MONARCH_PYCOM
 
 #include <TinyGsmClient.h>
 #include <BlynkSimpleTinyGSM.h>
@@ -58,14 +57,11 @@
 #define SerialMon Serial
 
 // Hardware Serial on Mega, Leonardo, Micro
-#ifndef __AVR_ATmega328P__
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-#else
-#include <SoftwareSerial.h>
-SoftwareSerial SerialAT(2, 3);  // RX, TX
-#endif
+//#include <SoftwareSerial.h>
+//SoftwareSerial SerialAT(2, 3); // RX, TX
 
 
 // Your GPRS credentials, if any

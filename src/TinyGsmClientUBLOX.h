@@ -193,9 +193,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
 
     // Enable automatic time zome update
     sendAT(GF("+CTZU=1"));
-    waitResponse(10000L);
-    // Ignore the response, in case the network doesn't support it.
-    // if (waitResponse(10000L) != 1) { return false; }
+    if (waitResponse(10000L) != 1) { return false; }
 
     SimStatus ret = getSimStatus();
     // if the sim isn't ready and a pin has been provided, try to unlock the sim
@@ -224,6 +222,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
     res2.trim();
 
     String name = res1 + String(' ') + res2;
+    DBG("### Modem:", name);
     if (name.startsWith("u-blox SARA-R4") ||
         name.startsWith("u-blox SARA-N4")) {
       DBG("### WARNING:  You are using the wrong TinyGSM modem!");
@@ -244,11 +243,11 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl() {
     if (!testAT()) { return false; }
     if (!setPhoneFunctionality(16)) { return false; }
     delay(3000);  // TODO(?):  Verify delay timing here
-    return init(pin);
+    return init();
   }
 
   bool powerOffImpl() {
@@ -269,29 +268,6 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
  public:
   RegStatus getRegistrationStatus() {
     return (RegStatus)getRegistrationStatusXREG("CGREG");
-  }
-
-  bool setRadioAccessTecnology(int selected, int preferred) {
-    // selected:
-    // 0: GSM / GPRS / eGPRS (single mode)
-    // 1: GSM / UMTS (dual mode)
-    // 2: UMTS (single mode)
-    // 3: LTE (single mode)
-    // 4: GSM / UMTS / LTE (tri mode)
-    // 5: GSM / LTE (dual mode)
-    // 6: UMTS / LTE (dual mode)
-    // preferred:
-    // 0: GSM / GPRS / eGPRS
-    // 2: UTRAN
-    // 3: LTE
-    sendAT(GF("+URAT="), selected, GF(","), preferred);
-    if (waitResponse() != 1) { return false; }
-    return true;
-  }
-
-  bool getCurrentRadioAccessTecnology(int&) {
-    // @TODO
-    return false;
   }
 
  protected:
@@ -796,7 +772,7 @@ class TinyGsmUBLOX : public TinyGsmModem<TinyGsmUBLOX>,
             if (len >= 0 && len <= 1024) { sockets[mux]->sock_available = len; }
           }
           data = "";
-          // DBG("### URC Data Received:", len, "on", mux);
+          DBG("### URC Data Received:", len, "on", mux);
         } else if (data.endsWith(GF("+UUSOCL:"))) {
           int8_t mux = streamGetIntBefore('\n');
           if (mux >= 0 && mux < TINY_GSM_MUX_COUNT && sockets[mux]) {

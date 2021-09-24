@@ -29,6 +29,12 @@ class TinyGsmModem {
     thisModem().stream.flush();
     TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
   }
+  template <typename... Args>
+  inline void sendATsend(Args... cmd) {
+    thisModem().streamWrite("AT", cmd..., thisModem().gsmN);
+    thisModem().stream.flush();
+    TINY_GSM_YIELD(); /* DBG("### AT:", cmd...); */
+  }
   void setBaud(uint32_t baud) {
     thisModem().setBaudImpl(baud);
   }
@@ -53,8 +59,8 @@ class TinyGsmModem {
   /*
    * Power functions
    */
-  bool restart(const char* pin = NULL) {
-    return thisModem().restartImpl(pin);
+  bool restart() {
+    return thisModem().restartImpl();
   }
   bool poweroff() {
     return thisModem().powerOffImpl();
@@ -77,8 +83,8 @@ class TinyGsmModem {
     return thisModem().isNetworkConnectedImpl();
   }
   // Waits for network attachment
-  bool waitForNetwork(uint32_t timeout_ms = 60000L, bool check_signal = false) {
-    return thisModem().waitForNetworkImpl(timeout_ms, check_signal);
+  bool waitForNetwork(uint32_t timeout_ms = 60000L) {
+    return thisModem().waitForNetworkImpl(timeout_ms);
   }
   // Gets signal quality report
   int16_t getSignalQuality() {
@@ -141,7 +147,7 @@ class TinyGsmModem {
     res1.replace("\rOK\r", "");
     res1.trim();
 
-    thisModem().sendAT(GF("+GMM"));
+    thisModem().sendAT(GF("+CGMM")); ////////////////  thisModem().sendAT(GF("+GMM"));
     String res2;
     if (thisModem().waitResponse(1000L, res2) != 1) { return "unknown"; }
     res2.replace("\r\nOK\r\n", "");
@@ -172,10 +178,16 @@ class TinyGsmModem {
     return true;
   }
 
-  bool sleepEnableImpl(bool enable = true) TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool sleepEnableImpl(bool enable = true){
+    if (!thisModem().sleepEnableImpl(enable)) { return false; }
+    return true;
+  }
 
-  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false)
-      TINY_GSM_ATTR_NOT_IMPLEMENTED;
+  bool setPhoneFunctionalityImpl(uint8_t fun, bool reset = false){
+    if (!thisModem().setPhoneFunctionalityImpl(fun,reset)) { return false; }
+    return true;
+  }
+
 
   /*
    * Generic network functions
@@ -192,15 +204,13 @@ class TinyGsmModem {
                                            GF("+CEREG:"));
     if (resp != 1 && resp != 2 && resp != 3) { return -1; }
     thisModem().streamSkipUntil(','); /* Skip format (0) */
-    int status = thisModem().stream.parseInt();
+    int status = thisModem().streamGetIntBefore(',');
     thisModem().waitResponse();
     return status;
   }
 
-  bool waitForNetworkImpl(uint32_t timeout_ms   = 60000L,
-                          bool     check_signal = false) {
+  bool waitForNetworkImpl(uint32_t timeout_ms = 60000L) {
     for (uint32_t start = millis(); millis() - start < timeout_ms;) {
-      if (check_signal) { thisModem().getSignalQuality(); }
       if (thisModem().isNetworkConnected()) { return true; }
       delay(250);
     }

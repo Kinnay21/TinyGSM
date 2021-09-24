@@ -24,8 +24,6 @@
 #include "TinyGsmTCP.tpp"
 #include "TinyGsmTemperature.tpp"
 #include "TinyGsmTime.tpp"
-#include "TinyGsmNTP.tpp"
-
 
 #define GSM_NL "\r\n"
 static const char GSM_OK[] TINY_GSM_PROGMEM    = "OK" GSM_NL;
@@ -52,7 +50,6 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
                        public TinyGsmGSMLocation<TinyGsmSim7600>,
                        public TinyGsmGPS<TinyGsmSim7600>,
                        public TinyGsmTime<TinyGsmSim7600>,
-                       public TinyGsmNTP<TinyGsmSim7600>,
                        public TinyGsmBattery<TinyGsmSim7600>,
                        public TinyGsmTemperature<TinyGsmSim7600> {
   friend class TinyGsmModem<TinyGsmSim7600>;
@@ -62,7 +59,6 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
   friend class TinyGsmGPS<TinyGsmSim7600>;
   friend class TinyGsmGSMLocation<TinyGsmSim7600>;
   friend class TinyGsmTime<TinyGsmSim7600>;
-  friend class TinyGsmNTP<TinyGsmSim7600>;
   friend class TinyGsmBattery<TinyGsmSim7600>;
   friend class TinyGsmTemperature<TinyGsmSim7600>;
 
@@ -223,12 +219,12 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    * Power functions
    */
  protected:
-  bool restartImpl(const char* pin = NULL) {
+  bool restartImpl() {
     if (!testAT()) { return false; }
     sendAT(GF("+CRESET"));
     if (waitResponse(10000L) != 1) { return false; }
     delay(5000L);  // TODO(?):  Test this delay!
-    return init(pin);
+    return init();
   }
 
   bool powerOffImpl() {
@@ -275,17 +271,12 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
     return res;
   }
 
-  int16_t getNetworkMode() {
-    sendAT(GF("+CNMP?"));
-    if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) { return false; }
-    int16_t mode = streamGetIntBefore('\n');
-    waitResponse();
-    return mode;
-  }
-
-  bool setNetworkMode(uint8_t mode) {
+  String setNetworkMode(uint8_t mode) {
     sendAT(GF("+CNMP="), mode);
-    return waitResponse() == 1;
+    if (waitResponse(GF(GSM_NL "+CNMP:")) != 1) { return "OK"; }
+    String res = stream.readStringUntil('\n');
+    waitResponse();
+    return res;
   }
 
   String getLocalIPImpl() {
@@ -444,7 +435,7 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
 
   // get the RAW GPS output
   String getGPSrawImpl() {
-    sendAT(GF("+CGNSSINFO"));
+    sendAT(GF("+CGNSSINFO=32"));
     if (waitResponse(GF(GSM_NL "+CGNSSINFO:")) != 1) { return ""; }
     String res = stream.readStringUntil('\n');
     waitResponse();
@@ -566,11 +557,6 @@ class TinyGsmSim7600 : public TinyGsmModem<TinyGsmSim7600>,
    */
  protected:
   // Can follow the standard CCLK function in the template
-
-  /*
-   * NTP server functions
-   */
-  // Can sync with server using CNTP as per template
 
   /*
    * Battery functions

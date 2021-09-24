@@ -25,27 +25,23 @@
 #define TINY_GSM_MODEM_SIM800
 // #define TINY_GSM_MODEM_SIM808
 // #define TINY_GSM_MODEM_SIM868
-// #define TINY_GSM_MODEM_SIM7000SSL
-// #define TINY_GSM_MODEM_SIM7080
 // #define TINY_GSM_MODEM_UBLOX
 // #define TINY_GSM_MODEM_SARAR4
 // #define TINY_GSM_MODEM_ESP8266
 // #define TINY_GSM_MODEM_XBEE
 // #define TINY_GSM_MODEM_SEQUANS_MONARCH
+// #define TINY_GSM_MODEM_SEQUANS_MONARCH_PYCOM
 
 // Set serial for debug console (to the Serial Monitor, default speed 115200)
 #define SerialMon Serial
 
 // Set serial for AT commands (to the module)
 // Use Hardware Serial on Mega, Leonardo, Micro
-#ifndef __AVR_ATmega328P__
 #define SerialAT Serial1
 
 // or Software Serial on Uno, Nano
-#else
-#include <SoftwareSerial.h>
-SoftwareSerial SerialAT(2, 3);  // RX, TX
-#endif
+//#include <SoftwareSerial.h>
+//SoftwareSerial SerialAT(2, 3); // RX, TX
 
 // Increase RX buffer to capture the entire response
 // Chips without internal buffering (A6/A7, ESP8266, M590)
@@ -63,17 +59,13 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 // #define LOGGING  // <- Logging is for the HTTP library
 
 // Range to attempt to autobaud
-// NOTE:  DO NOT AUTOBAUD in production code.  Once you've established
-// communication, set a fixed baud rate using modem.setBaud(#).
 #define GSM_AUTOBAUD_MIN 9600
 #define GSM_AUTOBAUD_MAX 115200
 
-// Add a reception delay, if needed.
-// This may be needed for a fast processor at a slow baud rate.
+// Add a reception delay - may be needed for a fast processor at a slow baud rate
 // #define TINY_GSM_YIELD() { delay(2); }
 
-// Define how you're planning to connect to the internet.
-// This is only needed for this example, not in other code.
+// Define how you're planning to connect to the internet
 #define TINY_GSM_USE_GPRS true
 #define TINY_GSM_USE_WIFI false
 
@@ -84,12 +76,12 @@ SoftwareSerial SerialAT(2, 3);  // RX, TX
 // #define TINY_GSM_SSL_CLIENT_AUTHENTICATION
 
 // Your GPRS credentials, if any
-const char apn[]      = "YourAPN";
+const char apn[]  = "YourAPN";
 const char gprsUser[] = "";
 const char gprsPass[] = "";
 
 // Your WiFi connection credentials, if applicable
-const char wifiSSID[] = "YourSSID";
+const char wifiSSID[]  = "YourSSID";
 const char wifiPass[] = "YourWiFiPass";
 
 // Server details
@@ -119,7 +111,7 @@ const int  port       = 443;
 StreamDebugger debugger(SerialAT, SerialMon);
 TinyGsm        modem(debugger);
 #else
-TinyGsm        modem(SerialAT);
+TinyGsm modem(SerialAT);
 #endif
 
 TinyGsmClientSecure client(modem);
@@ -153,11 +145,14 @@ void setup() {
 
 #if TINY_GSM_USE_GPRS
   // Unlock your SIM card with a PIN if needed
-  if (GSM_PIN && modem.getSimStatus() != 3) { modem.simUnlock(GSM_PIN); }
+  if ( GSM_PIN && modem.getSimStatus() != 3 ) {
+    modem.simUnlock(GSM_PIN);
+  }
 #endif
 }
 
 void loop() {
+
 #if TINY_GSM_USE_WIFI
   // Wifi connection parameters must be set before waiting for the network
   SerialMon.print(F("Setting SSID/password..."));
@@ -182,24 +177,28 @@ void loop() {
   }
   SerialMon.println(" success");
 
-  if (modem.isNetworkConnected()) { SerialMon.println("Network connected"); }
+  if (modem.isNetworkConnected()) {
+    SerialMon.println("Network connected");
+  }
 
 #if TINY_GSM_USE_GPRS
   // GPRS connection parameters are usually set after network registration
-  SerialMon.print(F("Connecting to "));
-  SerialMon.print(apn);
-  if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-    SerialMon.println(" fail");
-    delay(10000);
-    return;
-  }
-  SerialMon.println(" success");
+    SerialMon.print(F("Connecting to "));
+    SerialMon.print(apn);
+    if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
+      SerialMon.println(" fail");
+      delay(10000);
+      return;
+    }
+    SerialMon.println(" success");
 
-  if (modem.isGprsConnected()) { SerialMon.println("GPRS connected"); }
+    if (modem.isGprsConnected()) {
+      SerialMon.println("GPRS connected");
+    }
 #endif
 
   SerialMon.print(F("Performing HTTPS GET request... "));
-  http.connectionKeepAlive();  // Currently, this is needed for HTTPS
+    http.connectionKeepAlive();  // Currently, this is needed for HTTPS
   int err = http.get(resource);
   if (err != 0) {
     SerialMon.println(F("failed to connect"));
@@ -217,7 +216,7 @@ void loop() {
 
   SerialMon.println(F("Response Headers:"));
   while (http.headerAvailable()) {
-    String headerName  = http.readHeaderName();
+    String headerName = http.readHeaderName();
     String headerValue = http.readHeaderValue();
     SerialMon.println("    " + headerName + " : " + headerValue);
   }
@@ -244,14 +243,16 @@ void loop() {
   SerialMon.println(F("Server disconnected"));
 
 #if TINY_GSM_USE_WIFI
-  modem.networkDisconnect();
-  SerialMon.println(F("WiFi disconnected"));
+    modem.networkDisconnect();
+    SerialMon.println(F("WiFi disconnected"));
 #endif
 #if TINY_GSM_USE_GPRS
-  modem.gprsDisconnect();
-  SerialMon.println(F("GPRS disconnected"));
+    modem.gprsDisconnect();
+    SerialMon.println(F("GPRS disconnected"));
 #endif
 
   // Do nothing forevermore
-  while (true) { delay(1000); }
+  while (true) {
+    delay(1000);
+  }
 }
